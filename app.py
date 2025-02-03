@@ -2,6 +2,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta
+import requests
 from flask import Flask, request, jsonify
 import google.generativeai as genai
 
@@ -82,12 +83,17 @@ def clean_inactive_sessions():
         time.sleep(300)  # Check every 5 minutes
 
 def keep_alive():
-    """Periodically checks if the server is still running."""
+    """Periodically pings the server to keep it alive."""
+    url = "https://new-ai-buxr.onrender.com"  # আপনার সার্ভারের সঠিক URL দিন
     while True:
+        time.sleep(300)  # প্রতি 10 মিনিট পর পিং করবে
         try:
-            print("✅ Keep-Alive Check: Server is running...")
-            time.sleep(300)  # 5 minutes (300 seconds)
-        except Exception as e:
+            response = requests.get(url)
+            if response.status_code == 200:
+                print("✅ Keep-Alive Ping Successful")
+            else:
+                print(f"⚠️ Keep-Alive Ping Failed: Status Code {response.status_code}")
+        except requests.exceptions.RequestException as e:
             print(f"❌ Keep-Alive Error: {e}")
 
 # Run clean-up and keep-alive in separate threads
