@@ -72,6 +72,11 @@ def ai_response():
     except Exception as e:
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
 
+@app.route('/ping', methods=['GET'])
+def ping():
+    """Simple ping endpoint to check if server is alive."""
+    return jsonify({"status": "alive"})
+
 def clean_inactive_sessions():
     """Periodically checks and removes inactive user sessions."""
     while True:
@@ -84,7 +89,7 @@ def clean_inactive_sessions():
 
 def keep_alive():
     """Periodically pings the server to keep it alive."""
-    url = "https://new-ai-buxr.onrender.com"  # আপনার সার্ভারের সঠিক URL দিন
+    url = "https://new-ai-buxr.onrender.com/ping"  # Ping এন্ডপয়েন্ট ব্যবহার করা হলো
     while True:
         time.sleep(300)  # প্রতি 10 মিনিট পর পিং করবে
         try:
