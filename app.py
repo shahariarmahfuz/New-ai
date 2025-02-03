@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 import google.generativeai as genai
 
@@ -24,8 +25,10 @@ model = genai.GenerativeModel(
     generation_config=generation_config,
 )
 
-# Store user sessions
+# Store user sessions and their last active time
 user_sessions = {}
+
+SESSION_TIMEOUT = timedelta(hours=6)  # Set the session timeout to 6 hours
 
 @app.route("/ai", methods=["GET"])
 def ai_response():
@@ -40,27 +43,43 @@ def ai_response():
 
     # Initialize session history if user is new
     if user_id not in user_sessions:
-        user_sessions[user_id] = []
+        user_sessions[user_id] = {
+            "history": [],
+            "last_active": datetime.now()
+        }
+
+    # Update last active time
+    user_sessions[user_id]["last_active"] = datetime.now()
 
     # Append user message to history
-    user_sessions[user_id].append({"role": "user", "parts": [question]})
+    user_sessions[user_id]["history"].append({"role": "user", "parts": [question]})
 
     try:
         # Create chat session with user's history
-        chat_session = model.start_chat(history=user_sessions[user_id])
+        chat_session = model.start_chat(history=user_sessions[user_id]["history"])
 
         # Get AI response
         response = chat_session.send_message(question)
 
         if response.text:
             # Append AI response to history
-            user_sessions[user_id].append({"role": "model", "parts": [response.text]})
+            user_sessions[user_id]["history"].append({"role": "model", "parts": [response.text]})
             return jsonify({"response": response.text})
         else:
             return jsonify({"error": "AI did not return any response"}), 500
 
     except Exception as e:
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
+
+def clean_inactive_sessions():
+    """Periodically checks and removes inactive user sessions."""
+    while True:
+        current_time = datetime.now()
+        for user_id, session_data in list(user_sessions.items()):
+            if current_time - session_data["last_active"] > SESSION_TIMEOUT:
+                print(f"🧹 Removing inactive session for user {user_id}")
+                del user_sessions[user_id]
+        time.sleep(300)  # Check every 5 minutes
 
 def keep_alive():
     """Periodically checks if the server is still running."""
@@ -71,7 +90,10 @@ def keep_alive():
         except Exception as e:
             print(f"❌ Keep-Alive Error: {e}")
 
-# Run keep-alive check in a separate thread
+# Run clean-up and keep-alive in separate threads
+clean_up_thread = threading.Thread(target=clean_inactive_sessions, daemon=True)
+clean_up_thread.start()
+
 keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
 keep_alive_thread.start()
 
