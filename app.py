@@ -14,15 +14,14 @@ genai.configure(api_key=API_KEY)
 
 # Set up the model with proper configuration
 generation_config = {
-    "temperature": 1,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 8192,
+    "temperature": 0.8,
+    "top_p": 0.9,
+    "top_k": 30,
+    "max_output_tokens": 2000,
     "response_mime_type": "text/plain",
 }
-
 model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash-exp",
+    model_name="gemini-2.0-flash",
     generation_config=generation_config,
 )
 
