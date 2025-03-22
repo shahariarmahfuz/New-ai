@@ -17,7 +17,7 @@ generation_config = {
     "temperature": 0.8,
     "top_p": 0.9,
     "top_k": 30,
-    "max_output_tokens": 2000,
+    "max_output_tokens": 500,
     "response_mime_type": "text/plain",
 }
 model = genai.GenerativeModel(
